@@ -4,7 +4,9 @@ from zun_ui.api import k8s_client
 from kubernetes import client, config
 
 def create_connect_tomysql_DB():
+    # config database info
     db = MySQLdb.connect("10.10.87.62", "root", "fudan_Nisl2019@", "hadoop", charset='utf8')
+    # return a database connection
     return db
 
 def read_hadoop_info_from_id(id):
@@ -203,8 +205,10 @@ def get_all_cluster():
     for row in results_set:
         row = "".join(tuple(row))
         clusterlist.append(row)
+    db.close()
     return clusterlist
 
 
-if __name__ == '__main__':
-    read_hadoop_info_from_id()
+# use for test
+# if __name__ == '__main__':
+#     read_hadoop_info_from_id()

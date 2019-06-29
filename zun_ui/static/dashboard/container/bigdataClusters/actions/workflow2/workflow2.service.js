@@ -17,7 +17,10 @@
   
       function init(actionType, title, submitText) {
         var schema, form, model;
-  
+        var images = [
+          {value: "hadoop", name: gettext("hadoop")},
+          {value: "hadoop2", name: gettext("hadoop2")}
+        ]
         // schema
         schema = {
             type: "object",
@@ -35,6 +38,14 @@
               },
               pods_number: {
                 title: gettext("Pods number"),
+                type: "string"
+              },
+              image: {
+                title: gettext("Image"),
+                type: "string"
+              },
+              'env-name': {
+                title: gettext("env-name"),
                 type: "string"
               }
             }
@@ -74,7 +85,31 @@
                             placeholder: gettext("Pods number of the bigdataCluster."),
                           }
                         ]
+                      },
+
+                      {
+                        type: "section",
+                        htmlClass: "col-xs-12",
+                        items: [
+                          {
+                            key: "image",
+                            type: "select",
+                            titleMap: images,
+                          }
+                        ]
+                      },
+
+                      {
+                        type: "section",
+                        htmlClass: "col-xs-12",
+                        items: [
+                          {
+                            key: "env-name",
+                            placeholder: gettext("env's name"),
+                          }
+                        ]
                       }
+
                     ]
                   }
                 ]
@@ -87,7 +122,9 @@
             name: "",
             namespace: "",
             pods_number: "",
-            action: "property"
+            action: "property",
+            image: "hadoop2",
+            "env-name": ""
         };
   
         var config = {
