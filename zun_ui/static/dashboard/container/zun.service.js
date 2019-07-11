@@ -293,7 +293,8 @@
     }
     function updateBigdataCluster(id, params) {
       var msg = gettext('Unable to update BigdataCluster.');
-      return apiService.patch(bigdataClustersPath + id, params).error(error(msg));
+      apiService.patch(bigdataClustersPath + id, params).error(error(msg));
+      return apiService.get(bigdataClustersPath).error(error(msg));
     }
 
     //////////////
@@ -331,8 +332,7 @@
     function createJob(params) {
       console.log('--', params)
       var msg = gettext('Unable to create Job.');
-      return apiService.post(jobsPath, params).error(error(msg));
-      //return apiService.post(jobsPath, params);
+      return apiService.post(jobsPath, params);
     }
 
     ////////////

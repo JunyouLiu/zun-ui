@@ -336,15 +336,21 @@ def bigdataCluster_list(request, limit=None, marker=None, sort_key=None, sort_di
 
 def bigdataCluster_create(request, **kwargs):
     args, run = _cleanup_params(BIGDATACLUSTER_CREATE_ATTRS, True, **kwargs)
-    print "args", args
     # yaml file -> file
     yaml_file = str(args["template"])
-    print yaml_file
-    args["template"] = template_format.parse(args["template"])
 
-    json_file = args["template"]
-    print "client:", json_file
-    k8s_client.create_deployment_from_yaml(json_file)
+    yaml_file_segement = yaml_file.split('---')
+    for yaml_f in yaml_file_segement:
+        # args["template"] = template_format.parse(args["template"])
+        args["template"] = template_format.parse(yaml_f)
+        json_file = args["template"]
+        k8s_client.create_deployment_from_yaml(json_file)
+    # print yaml_file
+    # args["template"] = template_format.parse(args["template"])
+    #
+    # json_file = args["template"]
+    # print "client:", json_file
+    # k8s_client.create_deployment_from_yaml(json_file)
     return
 
 def create_by_proprity_test(request, **kwargs):
@@ -378,3 +384,31 @@ def host_list(request, limit=None, marker=None, sort_key=None, sort_dir=None):
 
 def host_show(request, id):
     return zunclient(request).hosts.get(id)
+
+
+# Job submit
+def writecsv(request, master_IP, appID):
+    jobname = request.data.get("jobname")
+    jobtemplate = request.data.get("jobtemplate")
+    clustername = request.data.get("clustername")
+    outputfile = request.data.get("outputfile")
+    with open('/root/job.csv', 'a+') as f:
+        fieldnames = ['jobname', 'jobtemplate', 'clustername', 'masterIP', 'appID', 'outputfile']
+        write = csv.DictWriter(f, fieldnames=fieldnames)
+        reader = csv.DictReader(f)
+        if reader.fieldnames != fieldnames:
+            write.writeheader()
+        write.writerows([{'jobname': jobname, 'jobtemplate': jobtemplate, 'clustername': clustername,
+                          'masterIP': master_IP, 'appID': appID, 'outputfile': outputfile}])
+        f.close()
+    return True
+
+
+def readcsv():
+    file_path = '/root/job.csv'
+    if os.path.exists(file_path) == True:
+        with open(file_path, 'a+') as f:
+            reader = list(csv.DictReader(f))
+            return reader
+    else:
+        return False

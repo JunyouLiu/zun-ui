@@ -8,6 +8,7 @@
     createBigdataClusterService2.$inject = [
       'horizon.app.core.openstack-service-api.policy',
       'horizon.app.core.openstack-service-api.zun',
+      'horizon.app.core.openstack-service-api.glance',
       'horizon.dashboard.container.bigdataClusters.actions.workflow2',
       'horizon.dashboard.container.bigdataClusters.resourceType',
       'horizon.framework.util.actions.action-result.service',
@@ -18,7 +19,7 @@
     ];
   
     function createBigdataClusterService2(
-      policy, zun, workflow2, resourceType,
+      policy, zun, glance, workflow2, resourceType,
       actionResult, gettext, $qExtensions, modal, toast
     ) {
   
@@ -38,13 +39,22 @@
   
       function initAction() {
       }
-  
       function perform() {
         var title, submitText;
         title = gettext('Create BigdataCluster');
         submitText = gettext('Create');
-        var config = workflow2.init('create', title, submitText);
-        return modal.open(config).then(submit);
+        var imageNameList = [];
+        function onLoad(response) {
+          var imageList = response.data.items;
+          for (let i = 0; i < imageList.length; i++) {
+            imageNameList[i]= imageList[i].name;
+          }
+          return imageNameList;
+        }
+        glance.getImages().then(onLoad).then(value => {
+          var config = workflow2.init('create', title, submitText, value);
+          return modal.open(config).then(submit);
+        });
       }
   
       function allowed() {
@@ -52,8 +62,6 @@
       }
   
       function submit(context) {
-        console.log('submit:');
-        console.log(context);
         return zun.createBigdataCluster2(context.model, true).then(success, true);
       }
   

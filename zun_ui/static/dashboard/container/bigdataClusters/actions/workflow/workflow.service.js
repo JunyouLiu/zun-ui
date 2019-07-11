@@ -17,7 +17,6 @@
   
       function init(actionType, title, submitText) {
         var schema, form, model;
-  
         // schema
         schema = {
           type: 'object',

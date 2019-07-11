@@ -7,24 +7,40 @@
   
     workflow.$inject = [
       'horizon.dashboard.container.jobs.basePath',
-      'horizon.framework.util.i18n.gettext'
+      'horizon.framework.util.i18n.gettext',
+      'horizon.app.core.openstack-service-api.zun'
     ];
   
-    function workflow(basePath, gettext) {
+    function workflow(basePath, gettext, zun) {
       var workflow = {
         init: init
       };
-  
-      function init(actionType, title, submitText) {
+
+      // var clusterNameList = [];
+      // // load the list of bigdataCluster
+      // function onLoad(response) {
+      //   var clusterInfo = response.data['hadoop_cluster_deployment_infos'];  
+      //   for (let i = 0; i < clusterInfo.length; i++) {
+      //     clusterNameList[i]= clusterInfo[i].name;
+      //   }
+      // }
+      // zun.getBigdataClusters().then(onLoad);
+
+      function init(actionType, title, submitText, clusterNameList) {
         var schema, form, model;
-        var outputfilepaths = [
-          {value: "/wordcount", name: gettext("/wordcount")},
-          {value: "/terasort", name: gettext("/terasort")}
-        ]
+        var clusternames = [];
+        for (let i = 0; i < clusterNameList.length; i++) {
+          var name = clusterNameList[i];
+          clusternames.push({
+            name: gettext(name),
+            value: name
+          });
+        }
         var jobtemplates = [
           {value: "wordcount", name: gettext("wordcount")},
           {value: "terasort", name: gettext("terasort")}
         ];
+
         // schema
         schema = {
             type: "object",
@@ -46,8 +62,8 @@
                 title: gettext("Input File"),
                 type: "string"
               },
-              outputfilepath: {
-                title: gettext("Output File Path"),
+              outputfilename: {
+                title: gettext("Output File Name"),
                 type: "string"
               },
               jar: {
@@ -82,7 +98,8 @@
                           },
                           {
                             key: "clustername",
-                            placeholder: gettext("Name of the Cluster.")
+                            type: "select",
+                            titleMap: clusternames
                           }
                         ]
                       },
@@ -102,9 +119,8 @@
                         htmlClass: 'col-sm-12',
                         items: [
                           {
-                            key: "outputfilepath",
-                            type: "select",
-                            titleMap: outputfilepaths
+                            key: "outputfilename",
+                            placeholder: gettext("Name of the output file.")
                           }
                         ]
                       },
@@ -125,11 +141,11 @@
         ];
 
         model = {
-            jobname: "",
-            clustername: "",
-            jobtemplate: "wordcount",
-            outputfilepath: "/wordcount",
-            template: ""
+          jobname: "",
+          clustername: clusternames[0].value,
+          jobtemplate: "wordcount",
+          outputfilename: "",
+          template: ""
         };
   
         var config = {

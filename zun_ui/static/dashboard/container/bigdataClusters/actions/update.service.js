@@ -53,15 +53,19 @@
         config.model.id = selected.id;
 
         // load current data
-        zun.getDeployment(selected.id).then(onLoad);
         function onLoad(response) {
-            var deploymentInfo = response.data['id_deployment_info'];
-            config.model.name = deploymentInfo[0].metadata.name ? deploymentInfo[0].metadata.name : "";
-            config.model.namespace = deploymentInfo[0].metadata.namespace ? deploymentInfo[0].metadata.namespace : "";
-            config.model['pods_number'] = deploymentInfo[2].status.replicas ? deploymentInfo[2].status.replicas : "";
+            var deploymentInfo = response.data['info_for_update'];
+            // print deploymentInfo
+            config.model.name = deploymentInfo['name'] ? deploymentInfo['name'] : "";
+            config.model.namespace = deploymentInfo['namespace'] ? deploymentInfo['namespace'] : "";
+            config.model['pods_number'] = deploymentInfo['pods'] ? deploymentInfo['pods'] : "";
+            // config.model.image = 'test';
+            config.model.CPU = deploymentInfo['cpu'];
+            config.model.memory = deploymentInfo['memory'];
+            config.model['env-name'] = deploymentInfo['env_name'];
             config.model.id = response.data.id;
-            console.log(config.model);
-          }
+        }
+        zun.getDeployment(selected.id).then(onLoad);
         return modal.open(config).then(submit);
       }
   

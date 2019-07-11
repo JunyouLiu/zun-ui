@@ -248,10 +248,14 @@ class BigdataClusters(generic.View):
             create_property['name'] = info['name']
             create_property['namespace'] = info['namespace']
             create_property['pods'] = int(info['pods_number'])
-            print type(create_property['pods'])
+            create_property['env_name'] = info['env-name']
+            create_property['cpu'] = info['CPU']
+            create_property['memory'] = info['memory']
+            create_property['image'] = info['image']
+
+            print create_property
             create_by_property.main(create_property)
         else:
-            print "yaml"
             new_deployment_bigdataCluster = client.bigdataCluster_create(request, **request.DATA)
         return
 
@@ -270,18 +274,21 @@ class BigdataClusters(generic.View):
 
 @urls.register
 class BigdataCluster(generic.View):
-    """API for retrieving a single bigdataCluster"""
+    """
+    API for retrieving a single bigdataCluster
+    """
     url_regex = r'zun/bigdataClusters/(?P<id>[^/]+)$'
 
     @rest_utils.ajax()
     def get(self, request, id):
-        # id_to_deployment_info = k8s_client.get_deployment_info_from_id(id)
         hadoop_cluster_info = DB.read_hadoop_info_from_id(id)
         return hadoop_cluster_info
 
     @rest_utils.ajax(data_required=True)
     def patch(self, request, id):
-        """Update a BigdataCluster"""
+        """
+        Update a BigdataCluster
+        """
         print request.DATA
         info = request.DATA
         update_property={}
@@ -300,32 +307,32 @@ class Deployments(generic.View):
 
     @rest_utils.ajax()
     def get(self, request):
-        """Get a list of the Deployments.
-
+        """
+        Get a list of the Deployments.
         The returned result is an object with property 'items' and each
         item under this is a Deployments.
         """
         deployments_info = k8s_client.list_all_deployment()
-        print deployments_info
+        # print deployments_info
         return json.loads(deployments_info)
 
     @rest_utils.ajax(data_required=True)
     def post(self, request):
-        """Create a new Deployment.
-
+        """
+        Create a new Deployment.
         Returns the new Deployment object on success.
         """
         new_deployment_bigdataCluster = client.bigdataCluster_create(request, **request.DATA)
         return
 
-    @rest_utils.ajax(data_required=True)
-    def post2(self, request):
-        """Create a new Deployment by property.
-
-        Returns the new Deployment object on success.
-        """
-        #client.create_test(request, **request.DATA)
-        return
+    # @rest_utils.ajax(data_required=True)
+    # def post2(self, request):
+    #     """Create a new Deployment by property.
+    #
+    #     Returns the new Deployment object on success.
+    #     """
+    #     #client.create_test(request, **request.DATA)
+    #     return
 
     @rest_utils.ajax(data_required=True)
     def delete(self, request):
@@ -347,11 +354,11 @@ class Deployment(generic.View):
     @rest_utils.ajax()
     def get(self, request, id):
         # return change_to_id(client.deyloyment_show(request, id).to_dict())
-        # print "id: ", id
-        id_to_deployment_info = k8s_client.get_deployment_info_from_id(id)
-        return json.loads(id_to_deployment_info)
+        print id
+        id_to_deployment_info = k8s_client.get_deployment_info_from_id2(id)
+        print id_to_deployment_info
+        return id_to_deployment_info
 
-     
 @urls.register
 class Capsule(generic.View):
     """API for retrieving a single capsule"""
@@ -444,17 +451,17 @@ class Jobs(generic.View):
         job_info = submit_job.readcsv()
         if job_info == False:
             job_info = []
-        else:
-            for a in job_info:
-                yarninfo = submit_job.get_yarn_info(a['containername'], a['masterIP'])
-                appID = a['appID']
-                for b in yarninfo['apps']['app']:
-                    if appID == b['id']:
-                        if b['state'] == 'FINISHED':
-                            a['status'] = b['finalStatus']
-                        elif b['state'] == 'RUNNING':
-                            a['status'] = b['state']
-        print job_info
+        # else:
+        #     for a in job_info:
+        #         yarninfo = submit_job.get_yarn_info(a['containername'], a['masterIP'])
+        #         appID = a['appID']
+        #         for b in yarninfo['apps']['app']:
+        #             if appID == b['id']:
+        #                 if b['state'] == 'FINISHED':
+        #                     a['status'] = b['finalStatus']
+        #                 elif b['state'] == 'RUNNING':
+        #                     a['status'] = b['state']
+        # print job_info
         result = {"jobs": job_info}
         return result
 

@@ -1,3 +1,5 @@
+from os import path
+import yaml
 from kubernetes import client, config, utils, watch
 import json
 from os import system
@@ -7,7 +9,6 @@ from pprint import pprint
 
 def load_k8s_config():
     # load  k8s-config
-    # gen ju shi ji qing kaung, xiu gai lu jing
     config.load_kube_config("//.kube/config")
 
 def list_all_pods():
@@ -57,8 +58,9 @@ def list_all_deployment():
         deployment_info_to_dict = {}
         deployment_info_to_dict['deployments_info'] = deployment_info
         print json.dumps(deployment_info_to_dict)
-    except:
-        print "exception !!!"
+    except Exception as e:
+        print "exception info: "
+        print e
     return json.dumps(deployment_info_to_dict)
 
 
@@ -111,7 +113,6 @@ def get_deployment_info_from_id(id):
                 try:
                     json.dumps(status_value)
                 except TypeError:
-                    print "ok"
                     key = status_key
                     value = status_value
                     del status[key]
@@ -120,7 +121,68 @@ def get_deployment_info_from_id(id):
             id_to_deployment_info = id_to_deployment_info + " { \"status\": " + json.dumps(status) + "}]}"
             break
 
+    print id_to_deployment_info
     return id_to_deployment_info
+
+def get_deployment_info_from_id2(id):
+
+    load_k8s_config()
+    api_instance = client.AppsV1Api()
+    deployment_result_set = api_instance.list_deployment_for_all_namespaces()
+
+    str_id = str(id)
+    id_to_deployment_info_to_dict = {}
+    metadata = {}
+    spec = {}
+    status = {}
+    dname = ""
+    dnamespace = ""
+    duid = ""
+    denv_name = ""
+    dimage = ""
+    dcpu = ""
+    dmemory = ""
+    dpods = ""
+    for item in deployment_result_set.items:
+        if item.metadata.uid == str_id:
+            metadata = item.metadata.to_dict()
+            duid = item.metadata.uid
+            dname = item.metadata.name
+            dnamespace = item.metadata.namespace
+
+            spec = item.spec.to_dict()
+            denv_name = spec['template']['spec']['containers'][0]['env'][0]['name']
+            dimage = spec['template']['spec']['containers'][0]['image']
+            dcpu = spec['template']['spec']['containers'][0]['resources']['limits']['cpu']
+            dmemory = spec['template']['spec']['containers'][0]['resources']['limits']['memory']
+            dpods = spec['replicas']
+
+            status = item.status.to_dict()
+            break
+    id_deployment_info = {}
+    # replicas.append(metadata)
+    # id_deployment_info.append(spec)
+    # id_deployment_info.append(status)
+    id_deployment_info['metadata'] = metadata
+    id_deployment_info['spec'] = spec
+    id_deployment_info['status'] = status
+
+    info_for_update = {}
+    info_for_update['id'] = duid
+    info_for_update['name'] = dname
+    info_for_update['namespace'] = dnamespace
+    info_for_update['image'] = dimage
+    info_for_update['env_name'] = denv_name
+    info_for_update['cpu'] = dcpu
+    info_for_update['memory'] = dmemory
+    info_for_update['pods'] = dpods
+
+    id_to_deployment_info_to_dict['id'] = duid
+    id_to_deployment_info_to_dict['info_for_update'] = info_for_update
+    id_to_deployment_info_to_dict['id_deployment_info'] = id_deployment_info
+
+    # print id_to_deployment_info_to_dict
+    return id_to_deployment_info_to_dict
 
 
 def delete_deployment_from_id(id):
@@ -151,7 +213,7 @@ def delete_deployment_from_id(id):
     except ApiException as e:
         print("Exception when calling AppsV1Api->delete_namespaced_deployment: %s\n" % e)
 
-
+"""
 def list_all_pods_with_theirIPs():
 
     load_k8s_config()
@@ -160,12 +222,14 @@ def list_all_pods_with_theirIPs():
     ret = v1.list_pod_for_all_namespaces(watch=False)
     for item in ret.items:
         print("%s\t%s\t%s" % (item.status.pod_ip, item.metadata.namespace, item.metadata.name) )
+"""
+
 
 def list_all_hadoop_cluster_info():
 
     load_k8s_config()
     api_instance = client.AppsV1Api()
-
+    cluster_flag = ['HADOOP', 'HBASE', 'SPARK', 'HIVE']
     try:
         hadoop_cluster_deployment_infos = []
         deployment_result_set = api_instance.list_deployment_for_all_namespaces()
@@ -177,26 +241,32 @@ def list_all_hadoop_cluster_info():
             if info['env'] != None:
                 ans = info['env']
                 info2 = ans[0]
-                if info2['name'] != None and info2['name'] == 'HADOOP':
+                if info2['name'] != None and info2['name'] in cluster_flag:
                     # this is a hadoop deployment
-                    # print item
                     hadoop_cluster_deployment_info = {}
                     hadoop_cluster_deployment_info['id'] = item.metadata.uid
                     hadoop_cluster_deployment_info['name'] = item.metadata.name
                     hadoop_cluster_deployment_info['namespace'] = item.metadata.namespace
                     hadoop_cluster_deployment_info['replicas'] = item.spec.replicas
                     hadoop_cluster_deployment_info['labels'] = item.metadata.labels
-                    # print hadoop_cluster_deployment_info
+
+                    hadoop_cluster_deployment_info['image'] = item.spec.template.spec.containers[0].image
+                    hadoop_cluster_deployment_info['env_name'] = info2['name']
+
+                    resources = item.spec.template.spec.containers[0].resources.to_dict()
+                    hadoop_cluster_deployment_info['cpu'] = resources['limits']['cpu']
+                    hadoop_cluster_deployment_info['memory'] = resources['limits']['memory']
+
                     hadoop_cluster_deployment_infos.append(hadoop_cluster_deployment_info)
 
-    except:
-        print "exceptions !!!"
+    except Exception as e:
+        print "list_all_hadoop_cluster_info --- exceptions info: "
+        print e
+
     hadoop_cluster_deployment_infos_to_dict = {}
     hadoop_cluster_deployment_infos_to_dict["hadoop_cluster_deployment_infos"] = hadoop_cluster_deployment_infos
     # print json.dumps(hadoop_cluster_deployment_infos_to_dict)
     return json.dumps(hadoop_cluster_deployment_infos_to_dict)
 
-
-# use for test
-# if __name__ == "__main__":
-#     list_all_deployment()
+if __name__ == "__main__":
+    get_deployment_info_from_id2('53f2ae00-9f1f-11e9-aa19-525400da1894')

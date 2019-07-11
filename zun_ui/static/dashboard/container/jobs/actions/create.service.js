@@ -43,8 +43,19 @@
         var title, submitText;
         title = gettext('Create Job');
         submitText = gettext('Create');
-        var config = workflow.init('create', title, submitText);
-        return modal.open(config).then(submit);
+        var clusterNameList = [];
+        // load the list of bigdataCluster
+        function onLoad(response) {
+          var clusterInfo = response.data['hadoop_cluster_deployment_infos'];  
+          for (let i = 0; i < clusterInfo.length; i++) {
+            clusterNameList[i]= clusterInfo[i].name;
+          }
+          return clusterNameList;
+        }
+        zun.getBigdataClusters().then(onLoad).then(value => {
+          var config = workflow.init('create', title, submitText, value);
+          return modal.open(config).then(submit);
+        });      
       }
   
       function allowed() {
