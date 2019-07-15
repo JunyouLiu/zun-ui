@@ -49,7 +49,8 @@
           template: {
             text: gettext('Refresh')
           }
-        });
+        })
+      ;
     }
   
   })();

@@ -50,6 +50,7 @@
       restartContainer: restartContainer,
       rebuildContainer: rebuildContainer,
       commitContainer: commitContainer,
+      downloadOutputfile: downloadOutputfile,
       pauseContainer: pauseContainer,
       unpauseContainer: unpauseContainer,
       executeContainer: executeContainer,

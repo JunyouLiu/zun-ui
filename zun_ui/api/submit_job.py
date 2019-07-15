@@ -101,10 +101,12 @@ def upload_file(request, containername, inputfilepath, jarpath):
 # def upload_file(request, containername, masterIP, inputfilepath, jarpath):
     inputfilename = request.DATA['inputfile']
     jarname = request.DATA['jar']
-    # sftpput(masterIP, inputfilepath, '/opt/hdfsnfs/'+inputfilename)  /opt/hdfsnfs is hdfs nfs gateway directory
+    # sftpput(masterIP, inputfilepath, '/opt/'+inputfilename)
     os.system(sourceshell + 'zun cp ' + inputfilepath + ' ' + containername + ':/opt/')
-    os.system(sourceshell + 'zun exec ' + containername + ' mv /opt/' + inputfilename + ' /opt/hdfsnfs') # hdfsnfs directory cannot get file by zun cp directly, so container need mv file to hdfsnfs.
-    # os.system(sourceshell + 'zun exec ' + containername + ' hdfs dfs -put /opt/' + inputfilename+ ' /') #if container is not hdfs nfs container, user need to hdfs put files to hdfs
+    # os.system(sourceshell + 'zun exec ' + containername + ' mv /opt/' + inputfilename + ' /opt/hdfsnfs')
+    # hdfsnfs directory cannot get file by zun cp directly, so container need mv file to hdfsnfs.
+    os.system(sourceshell + 'zun exec ' + containername + ' hdfs dfs -put /opt/' + inputfilename+ ' /')
+    # if container is not hdfs nfs container, user need to hdfs put files to hdfs
     # sftpput(masterIP, jarpath, '/opt/'+jarname)
     return True
 
@@ -123,11 +125,10 @@ def get_master_details(request):
 
 def get_status(containername, masterIP, appID):
     yarnInfo = get_yarn_info(containername, masterIP, appID)
-    for item in yarnInfo['app']:
-        if item['state'] == 'FINISHED':
-            return item['finalStatus']
-        else:
-            return item['state']
+    if yarnInfo['app']['state'] == 'FINISHED':
+        return yarnInfo['app']['finalStatus']
+    else:
+        return yarnInfo['app']['state']
 
 
 def get_yarn_info(containername, masterIP, appID):
@@ -209,7 +210,9 @@ def submit_job(request):
     masterIP = masterinfo['ip']
     containername = masterinfo['name']+'-hadoop'
     inputfilepath = os.path.join("/opt/upload/inputfile_upload", request.DATA['inputfile'])
-    jar = '/usr/local/hadoop/share/hadoop/mapreduce/hadoop-mapreduce-examples-2.9.2.jar' # zun cp cannot transport jar. jar can only be transported by sftp. sftp need floating IP
+    jar = '/usr/local/hadoop/share/hadoop/mapreduce/hadoop-mapreduce-examples-2.9.2.jar'
+    # zun cp cannot transport jar. jar can only be transported by sftp. sftp need floating IP
+
     # jar = os.path.join("/opt/upload/jar_upload", request.DATA['jar'])
     upload_file(request, containername, inputfilepath, jar)
     # upload_file(request, containername, masterIP, inputfile, jar) #if containers own floating IP, it is the way to upload files.

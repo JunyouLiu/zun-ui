@@ -458,7 +458,7 @@ class Jobs(generic.View):
         #         for b in yarninfo['apps']['app']:
         #             if appID == b['id']:
         #                 if b['state'] == 'FINISHED':
-        #                     a['status'] = b['finalStatus']
+        #                     a['status'] = b[                              'finalStatus']
         #                 elif b['state'] == 'RUNNING':
         #                     a['status'] = b['state']
         # print job_info
@@ -466,6 +466,7 @@ class Jobs(generic.View):
         return result
 
     def post(self, request):
+        # ti jiao job
         print '!!!', request.FILES
         print '---', request.POST
         request.DATA = jsonutils.loads(request.POST['$$originalJSON'])
@@ -474,13 +475,17 @@ class Jobs(generic.View):
         request.DATA['inputfile'] = inputfile.name
         request.DATA['jar']= jar.name
         print '~~~~~~~~~~~~~~~~~~~~',  request.DATA
+
         destination1 = open(os.path.join("/opt/upload/inputfile_upload", inputfile.name),'wb+')
         destination2 = open(os.path.join("/opt/upload/jar_upload", jar.name),'wb+')
+
         for chunk in inputfile.chunks():
             destination1.write(chunk)
         destination1.close()
+
         for chunk in jar.chunks():
             destination2.write(chunk)
         destination2.close()
+
         submit_job.submit_job(request)
         return True

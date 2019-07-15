@@ -63,6 +63,7 @@
       restart: [states.CREATED, states.RUNNING, states.STOPPED, states.ERROR],
       rebuild: [states.CREATED, states.RUNNING, states.STOPPED, states.ERROR],
       commit: [states.RUNNING, states.STOPPED],
+      download:[states.RUNNING],
       pause: [states.RUNNING],
       unpause: [states.PAUSED],
       execute: [states.RUNNING],
