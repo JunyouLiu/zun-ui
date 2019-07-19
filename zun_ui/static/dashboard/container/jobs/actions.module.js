@@ -20,6 +20,7 @@
       'horizon.framework.util.i18n.gettext',
       'horizon.dashboard.container.jobs.actions.refresh.service',
       'horizon.dashboard.container.jobs.actions.create.service',
+      'horizon.dashboard.container.jobs.actions.download.service',
       'horizon.dashboard.container.jobs.resourceType'
     ];
   
@@ -28,6 +29,7 @@
       gettext,
       refreshJobService,
       createJobService,
+      downloadService,
       resourceType
     ) {
       var jobsResourceType = registry.getResourceType(resourceType);
@@ -38,6 +40,12 @@
         service: createJobService,
         template: {
           text: gettext('Create')
+        }
+      }).append({
+        id: 'downloadAction',
+        service: downloadService,
+        template: {
+          text: gettext('Download')
         }
       });
 

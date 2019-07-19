@@ -252,8 +252,7 @@ class BigdataClusters(generic.View):
             create_property['cpu'] = info['CPU']
             create_property['memory'] = info['memory']
             create_property['image'] = info['image']
-
-            print create_property
+            # print create_property
             create_by_property.main(create_property)
         else:
             new_deployment_bigdataCluster = client.bigdataCluster_create(request, **request.DATA)
@@ -296,7 +295,7 @@ class BigdataCluster(generic.View):
         update_property['name'] = info['name']
         update_property['namespace'] = info['namespace']
         update_property['pods'] = int(info['pods_number'])
-        print update_property
+        # print update_property
         create_by_property.update_deployment(update_property)
         return
 
@@ -354,9 +353,9 @@ class Deployment(generic.View):
     @rest_utils.ajax()
     def get(self, request, id):
         # return change_to_id(client.deyloyment_show(request, id).to_dict())
-        print id
+        # print id
         id_to_deployment_info = k8s_client.get_deployment_info_from_id2(id)
-        print id_to_deployment_info
+        # print id_to_deployment_info
         return id_to_deployment_info
 
 @urls.register
@@ -451,17 +450,6 @@ class Jobs(generic.View):
         job_info = submit_job.readcsv()
         if job_info == False:
             job_info = []
-        # else:
-        #     for a in job_info:
-        #         yarninfo = submit_job.get_yarn_info(a['containername'], a['masterIP'])
-        #         appID = a['appID']
-        #         for b in yarninfo['apps']['app']:
-        #             if appID == b['id']:
-        #                 if b['state'] == 'FINISHED':
-        #                     a['status'] = b[                              'finalStatus']
-        #                 elif b['state'] == 'RUNNING':
-        #                     a['status'] = b['state']
-        # print job_info
         result = {"jobs": job_info}
         return result
 

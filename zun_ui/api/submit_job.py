@@ -50,9 +50,9 @@ def readcsv():
         return False
 
 def container_submit_job(request, containername):
-    # jarname = request.DATA['jar']
-    # jar = '/opt/' + jarname
-    jar = "/usr/local/hadoop/share/hadoop/mapreduce/hadoop-mapreduce-examples-2.9.2.jar"
+    jarname = request.DATA['jar']
+    jar = '/opt/' + jarname
+    # jar = "/usr/local/hadoop/share/hadoop/mapreduce/hadoop-mapreduce-examples-2.9.2.jar"
     jobtemplate = request.DATA.get("jobtemplate")
     inputfile = request.DATA['inputfile']
     outputfile = request.DATA.get("outputfilename")
@@ -97,24 +97,29 @@ def sftpget(masterIP, remotefile, localfile):
     transport.close()
 
 
-def upload_file(request, containername, inputfilepath, jarpath):
+# def upload_file(request, containername, inputfilepath, jarpath):
+def upload_file(request, containername, containerID, inputfilepath, jarpath):
 # def upload_file(request, containername, masterIP, inputfilepath, jarpath):
     inputfilename = request.DATA['inputfile']
     jarname = request.DATA['jar']
     # sftpput(masterIP, inputfilepath, '/opt/'+inputfilename)
-    os.system(sourceshell + 'zun cp ' + inputfilepath + ' ' + containername + ':/opt/')
+    os.system('docker cp ' + inputfilepath + ' ' + containerID + ':/opt/')
+    # os.system(sourceshell + 'zun cp ' + inputfilepath + ' ' + containername + ':/opt/')
     # os.system(sourceshell + 'zun exec ' + containername + ' mv /opt/' + inputfilename + ' /opt/hdfsnfs')
     # hdfsnfs directory cannot get file by zun cp directly, so container need mv file to hdfsnfs.
     os.system(sourceshell + 'zun exec ' + containername + ' hdfs dfs -put /opt/' + inputfilename+ ' /')
+    os.system('docker cp ' + jarpath + ' ' + containerID + ':/opt')
     # if container is not hdfs nfs container, user need to hdfs put files to hdfs
     # sftpput(masterIP, jarpath, '/opt/'+jarname)
     return True
 
-
-def download_file(containername, outputfilename):
-    os.system(sourceshell + 'zun exec ' + containername + ' hdfs dfs -put /' + outputfilename + ' /opt/')
-    os.system(sourceshell + 'zun exec ' + containername + ' tar cpvf' + outputfilename + '.tar /opt/' + outputfilename)
-    os.system(sourceshell + 'zun cp ' + containername + ':/root/' + outputfilename + '.tar /opt/')
+def download_file(clustername, outputfilename):
+    masterinfo = DB.get_master_details_from_clustername(clustername)
+    containerID = 'zun-'+masterinfo['container_id']
+    containername = masterinfo['name']+'-hadoop'
+    os.system(sourceshell + 'zun exec ' + containername + ' hdfs dfs -get /' + outputfilename + ' /opt/')
+    os.system(sourceshell + 'zun exec ' + containername + ' tar cpvf ' + outputfilename + '.tar /opt/' + outputfilename)
+    os.system('docker cp ' + containerID + ':/root/' + outputfilename + '.tar /opt/stack/')
     return True
 
 
@@ -136,6 +141,11 @@ def get_yarn_info(containername, masterIP, appID):
         sourceshell + 'zun exec ' + containername + ' ' + 'curl --compressed -H "Accept:application/json" -X GET "http://' +
         masterIP + ':8088/ws/v1/cluster/apps/' + appID + '"')
     appresult = appresult[1]
+    while appresult[-1] != '}':
+        appresult = commands.getstatusoutput(
+            sourceshell + 'zun exec ' + containername + ' ' + 'curl --compressed -H "Accept:application/json" -X GET "http://' +
+            masterIP + ':8088/ws/v1/cluster/apps/' + appID + '"')
+        appresult = appresult[1]
     appresult = appresult[appresult.find('{"app"'):]
     appresult = json.loads(appresult)
     return appresult
@@ -167,6 +177,16 @@ def get_yarn_info(containername, masterIP, appID):
     #                 b = result.rfind('}')
     #         result = json.loads(result[a:b+1])
     return result
+
+
+def write_appID(request, appID):
+    jobname = request.DATA['jobname']
+    data = pandas.read_csv('/opt/stack/job.csv')
+    for index in range(len(data['jobname'])):
+        if data['jobname'][index] == jobname:
+            data['appID'][index] = appID
+    data.to_csv('/opt/stack/job.csv', index=False)
+    return True
 
 
 class LoopTimer(threading._Timer):
@@ -208,15 +228,20 @@ def submit_job(request):
     clustername = request.DATA['clustername']
     masterinfo = DB.get_master_details_from_clustername(clustername)
     masterIP = masterinfo['ip']
+    containerID = 'zun-'+masterinfo['container_id']
     containername = masterinfo['name']+'-hadoop'
     inputfilepath = os.path.join("/opt/upload/inputfile_upload", request.DATA['inputfile'])
-    jar = '/usr/local/hadoop/share/hadoop/mapreduce/hadoop-mapreduce-examples-2.9.2.jar'
+    # jar = '/usr/local/hadoop/share/hadoop/mapreduce/hadoop-mapreduce-examples-2.9.2.jar'
     # zun cp cannot transport jar. jar can only be transported by sftp. sftp need floating IP
 
-    # jar = os.path.join("/opt/upload/jar_upload", request.DATA['jar'])
-    upload_file(request, containername, inputfilepath, jar)
+    jarpath = os.path.join("/opt/upload/jar_upload", request.DATA['jar'])
+    # upload_file(request, containername, inputfilepath, jar)
+    print jarpath
+    writecsv(request, masterIP, 'creating', containername)
+    upload_file(request, containername, containerID, inputfilepath, jarpath)
     # upload_file(request, containername, masterIP, inputfile, jar) #if containers own floating IP, it is the way to upload files.
     appID = container_submit_job(request, containername)
-    writecsv(request, masterIP, appID, containername)
+    write_appID(request, appID)
+    # writecsv(request, masterIP, appID, containername)
     t = LoopTimer(5, fun_timer)
     t.start()

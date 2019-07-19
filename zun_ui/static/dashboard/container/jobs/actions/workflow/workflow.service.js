@@ -16,16 +16,6 @@
         init: init
       };
 
-      // var clusterNameList = [];
-      // // load the list of bigdataCluster
-      // function onLoad(response) {
-      //   var clusterInfo = response.data['hadoop_cluster_deployment_infos'];  
-      //   for (let i = 0; i < clusterInfo.length; i++) {
-      //     clusterNameList[i]= clusterInfo[i].name;
-      //   }
-      // }
-      // zun.getBigdataClusters().then(onLoad);
-
       function init(actionType, title, submitText, clusterNameList) {
         var schema, form, model;
         var clusternames = [];
@@ -140,13 +130,25 @@
             }
         ];
 
-        model = {
-          jobname: "",
-          clustername: clusternames[0].value,
-          jobtemplate: "wordcount",
-          outputfilename: "",
-          template: ""
-        };
+        if (clusternames.length === 0) {
+          model = {
+            jobname: "",
+            clustername: "",
+            jobtemplate: "wordcount",
+            outputfilename: "",
+            template: ""
+          };
+        }
+        else {
+          model = {
+            jobname: "",
+            clustername: clusternames[0].value,
+            jobtemplate: "wordcount",
+            outputfilename: "",
+            template: ""
+          };
+        }
+
   
         var config = {
           title: title,

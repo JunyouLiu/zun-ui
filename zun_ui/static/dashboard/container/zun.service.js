@@ -50,7 +50,6 @@
       restartContainer: restartContainer,
       rebuildContainer: rebuildContainer,
       commitContainer: commitContainer,
-      downloadOutputfile: downloadOutputfile,
       pauseContainer: pauseContainer,
       unpauseContainer: unpauseContainer,
       executeContainer: executeContainer,
@@ -77,6 +76,7 @@
       deleteDeployment: deleteDeployment,
       getJobs: getJobs,
       createJob: createJob,
+      downloadFile: downloadFile,
       pullImage: pullImage,
       getImages: getImages,
       deleteImage: deleteImage,
@@ -173,6 +173,7 @@
       var msg = gettext('Unable to commit Container.');
       return apiService.post(containersPath + id + '/commit', JSON.parse(json)).error(error(msg));
     }
+
 
     function pauseContainer(id) {
       var msg = gettext('Unable to pause Container');
@@ -283,7 +284,8 @@
     }
     function createBigdataCluster2(params) {
       var msg = gettext('Unable to create BigdataCluster.');
-      return apiService.post(bigdataClustersPath, params).error(error(msg));
+      apiService.post(bigdataClustersPath, params).error(error(msg));
+      return apiService.get(bigdataClustersPath).error(error(msg));
     }
     function deleteBigdataCluster(id, suppressError) {
       var promise = apiService.delete(bigdataClustersPath, [id]);
@@ -331,8 +333,11 @@
       return apiService.get(jobsPath).error(error(msg));
     }
     function createJob(params) {
-      console.log('--', params)
       var msg = gettext('Unable to create Job.');
+      return apiService.post(jobsPath, params);
+    }
+    function downloadFile(params) {
+      var msg = gettext('Unable to download file.');
       return apiService.post(jobsPath, params);
     }
 
